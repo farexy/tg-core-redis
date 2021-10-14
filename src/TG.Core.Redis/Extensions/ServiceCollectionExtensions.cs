@@ -1,10 +1,8 @@
-﻿using System.Collections.Generic;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using RedLockNet;
-using RedLockNet.SERedis;
-using RedLockNet.SERedis.Configuration;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
+using TG.Core.Redis.DistributedLock;
 
 namespace TG.Core.Redis.Extensions
 {
@@ -28,10 +26,10 @@ namespace TG.Core.Redis.Extensions
                 var redis = ConnectionMultiplexer.Connect(connectionString);
                 return redis.GetDatabase();
             });
-            services.AddSingleton<IDistributedLockFactory>(p =>
+            services.AddTransient<IDistributedLock, RedisDistributedLock>(p =>
             {
                 var redis = ConnectionMultiplexer.Connect(connectionString);
-                return RedLockFactory.Create(new List<RedLockMultiplexer> { redis });
+                return new RedisDistributedLock(redis.GetDatabase(), p.GetRequiredService<ILogger<RedisDistributedLock>>());
             });
 
             return services;

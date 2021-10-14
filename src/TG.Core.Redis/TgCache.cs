@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using IRedisCache = StackExchange.Redis.IDatabase;
 
-namespace Flow.Core.Redis
+namespace TG.Core.Redis
 {
     public abstract class TgCache
     {
