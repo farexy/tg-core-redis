@@ -1,0 +1,24 @@
+stages:
+  - test
+  - publish
+
+variables:
+  PROJECT: TG.Core.Redis
+
+image: mcr.microsoft.com/dotnet/sdk:5.0
+
+'Test code':
+  stage: test
+  script:
+      - dotnet build ./src
+  only:
+    - merge_requests
+
+'Publish':
+  stage: publish
+  script:
+    - dotnet pack ./src/$PROJECT -c Release -p:PackageVersion=1.0.$CI_PIPELINE_IID
+    - dotnet nuget add source "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/nuget/index.json" --name gitlab --username gitlab-ci-token --password $CI_JOB_TOKEN --store-password-in-clear-text
+    - dotnet nuget push "src/$PROJECT/bin/Release/*.nupkg" --source gitlab
+  only:
+    - master
