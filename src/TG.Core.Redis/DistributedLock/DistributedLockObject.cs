@@ -5,18 +5,18 @@ using StackExchange.Redis;
 
 namespace TG.Core.Redis.DistributedLock
 {
-    public class DistributedLockObject : IDisposable
+    public class DistributedLockObject : IDisposable, IAsyncDisposable
     {
-        private readonly Guid _lockId;
+        private readonly string _lockKey;
         private readonly Guid _instanceId;
         private readonly TimeSpan _timeout;
         private readonly IDatabase _db;
         private readonly ILogger _logger;
         private readonly Random _random = new();
 
-        internal DistributedLockObject(Guid lockId, Guid instanceId, TimeSpan timeout, ILogger logger, IDatabase db)
+        internal DistributedLockObject(string lockKey, Guid instanceId, TimeSpan timeout, ILogger logger, IDatabase db)
         {
-            _lockId = lockId;
+            _lockKey = lockKey;
             _instanceId = instanceId;
             _timeout = timeout;
             _logger = logger;
@@ -47,7 +47,7 @@ namespace TG.Core.Redis.DistributedLock
         {
             try
             {
-                return await _db.LockTakeAsync(_lockId.ToString(), _instanceId.ToString(), _timeout);
+                return await _db.LockTakeAsync(_lockKey, _instanceId.ToString(), _timeout);
             }
             catch (Exception ex)
             {
@@ -59,13 +59,24 @@ namespace TG.Core.Redis.DistributedLock
         {
             try
             {
-                _db.LockRelease(_lockId.ToString(), _instanceId.ToString());
+                _db.LockRelease(_lockKey, _instanceId.ToString());
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Error getting lock");
             }
-
+        }
+        
+        public async ValueTask DisposeAsync()
+        {
+            try
+            {
+                await _db.LockReleaseAsync(_lockKey, _instanceId.ToString());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error getting lock");
+            }
         }
     }
 }

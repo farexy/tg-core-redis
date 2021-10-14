@@ -20,14 +20,19 @@ namespace TG.Core.Redis.DistributedLock
             _instanceId = Guid.NewGuid();
         }
 
-        public Task<DistributedLockObject> AcquireLockAsync(Guid lockId, TimeSpan retryTimeout, int tryGetLockDelayMs = 200)
+        public Task<DistributedLockObject> AcquireLockAsync(string lockKey, int tryGetLockDelayMs = 200)
         {
-            return AcquireLockAsync(lockId, retryTimeout, TimeSpan.FromSeconds(10), tryGetLockDelayMs);
+            return AcquireLockAsync(lockKey, TimeSpan.FromMinutes(1), TimeSpan.FromSeconds(10), tryGetLockDelayMs);
         }
 
-        public async Task<DistributedLockObject> AcquireLockAsync(Guid lockId, TimeSpan retryTimeout, TimeSpan lockTimeout, int tryGetLockDelayMs = 200)
+        public Task<DistributedLockObject> AcquireLockAsync(string lockKey, TimeSpan retryTimeout, int tryGetLockDelayMs = 200)
         {
-            var lockObject = new DistributedLockObject(lockId, _instanceId, lockTimeout, _logger, _db);
+            return AcquireLockAsync(lockKey, retryTimeout, TimeSpan.FromSeconds(10), tryGetLockDelayMs);
+        }
+
+        public async Task<DistributedLockObject> AcquireLockAsync(string lockKey, TimeSpan retryTimeout, TimeSpan lockTimeout, int tryGetLockDelayMs = 200)
+        {
+            var lockObject = new DistributedLockObject(lockKey, _instanceId, lockTimeout, _logger, _db);
             return await lockObject.LockAsync(retryTimeout, tryGetLockDelayMs);
         }
     }
